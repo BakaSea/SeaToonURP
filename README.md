@@ -21,6 +21,8 @@
 * 屏幕空间边缘光
 * 刘海半透明
 
+* GT Tonemapping
+
 ## Screenshot
 
 ![](Screenshots/xigelika.png)
@@ -30,4 +32,5 @@
 * PBR GI
 * 皮肤次表面散射
 * 丝袜
+* 延迟渲染管线
 * SSR
