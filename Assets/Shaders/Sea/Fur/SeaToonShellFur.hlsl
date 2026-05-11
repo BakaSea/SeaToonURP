@@ -10,6 +10,7 @@
 // 由ShellFurPass每次迭代通过SetGlobalInteger设置的当前层索引
 int _ShellIndex;
 
+// 毛发高度图：白色(1)=有毛发且高度最大，黑色(0)=无毛发
 TEXTURE2D(_FurNoiseMap);    SAMPLER(sampler_FurNoiseMap);
 
 // 每个材质独立的参数，不同材质可以有不同的层数和间距
@@ -19,10 +20,8 @@ CBUFFER_START(ShellFurPerMaterial)
     float4 _FurNoiseMap_ST;
     half4 _FurColor;
     half4 _FurRampColor;
-    half _FurDensity;       // 噪声图采样密度，越大毛发越细密
-    half _FurThickness;     // 毛发粗细基准值
+    half _FurDensity;       // 噪声图采样密度，控制毛发疏密
     half _FurOcclusionPower;
-    half3 _FurGravity;      // 毛发弯曲方向和强度
 CBUFFER_END
 
 struct FurAttributes
@@ -56,19 +55,6 @@ half ShellLayer()
     return (half)_ShellIndex / max((half)(_ShellCount - 1), 1.0);
 }
 
-// 计算当前Shell层顶点沿法线方向的偏移
-// layer^2的弯曲因子使毛发尖端弯曲更大，模拟重力下的自然下垂
-float3 ShellOffset(half3 normalOS, half layer)
-{
-    // 沿法线方向均匀拉伸
-    float3 offset = normalOS * _ShellDistance * _ShellCount * layer;
-    // 重力弯曲：使用layer^2曲线，越靠近尖端弯曲越明显
-    float3 gravityOS = TransformWorldToObjectNormal(normalize(_FurGravity));
-    half bendFactor = layer * layer;
-    offset += gravityOS * length(_FurGravity) * bendFactor * _ShellDistance * _ShellCount;
-    return offset;
-}
-
 FurVaryings ShellFurVertex(FurAttributes input)
 {
     FurVaryings output = (FurVaryings)0;
@@ -80,8 +66,8 @@ FurVaryings ShellFurVertex(FurAttributes input)
     half layer = ShellLayer();
     output.shellLayer = layer;
 
-    // 将顶点沿法线方向偏移，生成当前Shell层的几何体
-    float3 positionOS = input.positionOS + ShellOffset(input.normalOS, layer);
+    // 沿法线方向偏移顶点，生成当前Shell层的几何体
+    float3 positionOS = input.positionOS + input.normalOS * _ShellDistance * _ShellCount * layer;
 
     VertexPositionInputs vertexInput = GetVertexPositionInputs(positionOS);
     VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
@@ -111,18 +97,17 @@ half4 ShellFurFragment(FurVaryings input) : SV_TARGET
 
     half layer = input.shellLayer;
 
-    // 用噪声图控制毛发分布，_FurDensity决定采样频率（即毛发粗细密度）
+    // 采样毛发高度图：白色(1)=毛发高度满，黑色(0)=无毛发
     float2 furUV = input.uv * _FurDensity;
-    half noise = SAMPLE_TEXTURE2D(_FurNoiseMap, sampler_FurNoiseMap, furUV).r;
+    half furHeight = SAMPLE_TEXTURE2D(_FurNoiseMap, sampler_FurNoiseMap, furUV).r;
 
-    // 毛发逐层变细：(1-layer)^2 使得根部粗、尖端细，曲线柔和自然
-    half thinning = 1.0 - layer;
-    thinning = thinning * thinning;
-    half threshold = _FurThickness * thinning;
-
-    // 噪声值低于阈值的像素被丢弃，形成毛发间的缝隙
+    // 核心裁剪逻辑：毛发高度 < 阈值 → 毛发在此处长不到这一层，丢弃
+    // 使用layer^2作为阈值曲线：根部阈值小（毛发粗），尖端阈值快速增大（毛发细）
+    // 例如 layer=0.5时阈值仅0.25，大部分像素存活；layer=0.9时阈值0.81，大量像素被裁剪
+    // 这样产生柔和自然的"根粗尖细"过渡
     // 第0层（根部）保留完整表面作为底色
-    if (_ShellIndex > 0 && noise < threshold)
+    half threshold = layer * layer;
+    if (_ShellIndex > 0 && furHeight < threshold)
         discard;
 
     half3 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).rgb * _FurColor.rgb;
@@ -147,8 +132,8 @@ half4 ShellFurFragment(FurVaryings input) : SV_TARGET
 
     color = MixFog(color, input.fogFactor);
 
-    // 使用smoothstep让毛发边缘柔和过渡，避免硬边
-    half alpha = (_ShellIndex == 0) ? 1.0 : smoothstep(0.0, threshold, noise);
+    // 使用smoothstep让毛发边缘柔和过渡，避免硬边锯齿
+    half alpha = (_ShellIndex == 0) ? 1.0 : smoothstep(threshold, threshold + 0.05, furHeight);
 
     return half4(color, alpha);
 }

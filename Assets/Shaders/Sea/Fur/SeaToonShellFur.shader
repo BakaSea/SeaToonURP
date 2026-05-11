@@ -12,13 +12,11 @@ Shader "SeaToon/SeaToonShellFur"
         _ShellDistance("Shell Distance", Float) = 0.005
 
         [Header(Fur)]
-        // 噪声图控制毛发分布和粗细
-        _FurNoiseMap("Fur Noise Map", 2D) = "white" {}
+        // 毛发高度图：白色=有毛发(高度满)，黑色=无毛发
+        _FurNoiseMap("Fur Height Map", 2D) = "white" {}
         _FurColor("Fur Color", Color) = (1, 1, 1, 1)
         _FurDensity("Fur Density", Range(1.0, 100.0)) = 30.0
-        _FurThickness("Fur Thickness", Range(0.0, 1.0)) = 0.5
         _FurOcclusionPower("Fur Occlusion Power", Range(0.0, 5.0)) = 1.5
-        _FurGravity("Fur Gravity", Vector) = (0, -0.05, 0, 0)
 
         [Header(Ramp)]
         _RampColor("Ramp Color", Color) = (0.6117647, 0.6117647, 0.6274511, 1)
