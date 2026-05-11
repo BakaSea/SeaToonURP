@@ -73,7 +73,7 @@ Shader "SeaToon/SeaToonSilk"
             
             Blend One Zero
             ZWrite On
-            Cull Back
+            Cull Off
             ZTest LEqual
             
             HLSLPROGRAM
