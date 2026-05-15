@@ -8,8 +8,8 @@ public class ShellFurRendererFeature : ScriptableRendererFeature
     {
         // 全局最大迭代层数，Pass会迭代这么多次
         // 每个材质通过自身的_ShellCount控制实际使用的层数（超出部分会被shader discard）
-        [Range(1, 64)]
-        public int maxShellCount = 64;
+        [Range(1, 32)]
+        public int maxShellCount = 32;
     }
 
     public Settings settings = new Settings();

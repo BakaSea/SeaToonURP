@@ -34,15 +34,18 @@ struct Varyings
     float2 dynamicLightmapUV    : TEXCOORD8; // Dynamic lightmap UVs
 #endif
 #if defined(HAIR_MAT)
-    half3 upwardWS             : TEXCOORD9;
+    half3 upwardWS              : TEXCOORD9;
 #endif
 #if defined(FACE_MAT)
-    half3 forwardWS            : TEXCOORD9;
-    half3 upwardWS             : TEXCOORD10;
+    half3 forwardWS             : TEXCOORD9;
+    half3 upwardWS              : TEXCOORD10;
     float2 bangsShadowCoord     : TEXCOORD11;
 #endif
+#if defined(SHELL_FUR_MAT)
+    half shellLayer             : TEXCOORD12;
+#endif
 #if defined(_THREADMAP_ON)
-    float2 threadUV             : TEXCOORD12;
+    float2 threadUV             : TEXCOORD13;
 #endif
     float4 positionCS           : SV_POSITION;
 
@@ -58,7 +61,13 @@ Varyings LitForwardVertex(Attributes input)
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
-    VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS);
+    float3 positionOS = input.positionOS;
+#if defined(SHELL_FUR_MAT)
+    output.shellLayer = (half)_ShellIndex / max((half)(_ShellCount - 1), 1.0);
+    positionOS = input.positionOS + input.normalOS * _ShellDistance * _ShellCount * output.shellLayer;
+#endif
+    
+    VertexPositionInputs vertexInput = GetVertexPositionInputs(positionOS);
 #if defined(_RADIAL_TANGENT)
     half3 tangent = normalize(cross(input.normalOS, half3(0, 1, 0)));
 #else
@@ -72,7 +81,7 @@ Varyings LitForwardVertex(Attributes input)
     output.positionCS = vertexInput.positionCS;
     output.fogFactor = ComputeFogFactor(output.positionCS.z);
 
-    float3 rimPositionOS = input.positionOS+input.normalOS;
+    float3 rimPositionOS = positionOS+input.normalOS;
     VertexPositionInputs rimPositions = GetVertexPositionInputs(rimPositionOS);
     float2 rimPositionNDC = rimPositions.positionNDC.xy/rimPositions.positionNDC.w;
     float2 rimPositionSS = rimPositionNDC*_ScreenParams.xy;
@@ -157,7 +166,7 @@ ToonSurfaceData InitializeSurfaceData(Varyings input)
     output.bangsAlpha = _BangsAlpha;
 #endif
 
-#if defined(SILK_MAT)
+#if defined(SILK_MAT) || defined(SHELL_FUR_MAT) || defined(FUR_CONTOUR_MAT)
     output.specularColor = _SpecularColor.rgb;
     output.smoothness = _Smoothness;
     output.anisotropy = _Anisotropy;
@@ -229,12 +238,48 @@ half4 LitForwardFragment(Varyings input) : SV_TARGET
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    
+#if defined(SHELL_FUR_MAT)
+    // 当全局迭代索引超出该材质的层数时，丢弃像素
+    // 这样不同材质可以有不同的_ShellCount，Pass只需按最大层数迭代
+    if (_ShellIndex >= _ShellCount)
+        discard;
 
+    half layer = input.shellLayer;
+
+    // 采样毛发高度图：白色(1)=毛发高度满，黑色(0)=无毛发
+    float2 furUV = input.uv * _FurDensity + _FurUVOffset.xy * layer;
+    half furHeight = SAMPLE_TEXTURE2D(_FurNoiseMap, sampler_FurNoiseMap, furUV).r;
+
+    // 核心裁剪逻辑：毛发高度 < 阈值 → 毛发在此处长不到这一层，丢弃
+    // 使用layer^2作为阈值曲线：根部阈值小（毛发粗），尖端阈值快速增大（毛发细）
+    // 例如 layer=0.5时阈值仅0.25，大部分像素存活；layer=0.9时阈值0.81，大量像素被裁剪
+    // 这样产生柔和自然的"根粗尖细"过渡
+    // 第0层（根部）保留完整表面作为底色
+    half threshold = layer * layer;
+    if (_ShellIndex > 0 && furHeight < threshold)
+        discard;
+#endif
+    
     ToonSurfaceData surfaceData = InitializeSurfaceData(input);
     ToonInputData inputData = InitializeInputData(input, surfaceData.normalTS);
 
+#if defined(FUR_CONTOUR_MAT)
+    half VoL = dot(inputData.viewDirWS, inputData.normalWS);
+    if (VoL >= -0.1)
+        discard;
+#endif
+
+#if defined(SHELL_FUR_MAT)
+    surfaceData.occlusion = pow(saturate(layer), _FurOcclusionPower);
+#endif
+    
     half4 color = ToonShading(inputData, surfaceData);
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
+
+#if defined(SHELL_FUR_MAT)
+    color.a = (_ShellIndex == 0) ? 1.0 : smoothstep(threshold, threshold + 0.05, furHeight);
+#endif
     
     return color;
 }

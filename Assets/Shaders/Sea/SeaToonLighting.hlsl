@@ -13,10 +13,12 @@
 #include "Skin/SeaToonSkin.hlsl"
 #elif defined(HAIR_MAT)
 #include "Hair/SeaToonHair.hlsl"
-#elif defined(SILK_MAT)
+#elif defined(SILK_MAT) || defined(FUR_CONTOUR_MAT)
 #include "Fabric/SeaToonSilk.hlsl"
 #elif defined(COTTON_MAT)
 #include "Fabric/SeaToonCotton.hlsl"
+#elif defined(SHELL_FUR_MAT)
+#include "Fur/SeaToonShellFur.hlsl"
 #endif
 
 struct ShadowLightResult
@@ -139,7 +141,7 @@ half4 ToonShading(ToonInputData inputData, ToonSurfaceData surfaceData)
     ShadowLightResult shadowLightResult = ShadeShadowLight(inputData, surfaceData, aoFactor, rimMask, mainLight);
     Li += shadowLightResult.Li;
     
-    //Li += ShadeGI(inputData, surfaceData, aoFactor, shadowLightResult.shadowMask);
+    Li += ShadeGI(inputData, surfaceData, aoFactor, shadowLightResult.shadowMask);
     
     uint pixelLightCount = GetAdditionalLightsCount();
     LIGHT_LOOP_BEGIN(pixelLightCount)

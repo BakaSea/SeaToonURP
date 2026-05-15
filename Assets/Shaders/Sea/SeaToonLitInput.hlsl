@@ -29,7 +29,7 @@ struct ToonSurfaceData
     half specularWidth;
     half bangsAlpha;
 #endif
-#if defined(SILK_MAT)
+#if defined(SILK_MAT) || defined(SHELL_FUR_MAT) || defined(FUR_CONTOUR_MAT)
     half3 specularColor;
     half smoothness;
     half anisotropy;
@@ -69,7 +69,7 @@ struct ToonInputData
 TEXTURE2D(_NormalMap);          SAMPLER(sampler_NormalMap);
 TEXTURE2D(_OcclusionMap);       SAMPLER(sampler_OcclusionMap);
 
-#if defined(METALLIC_MAT) || defined(SKIN_MAT)
+#if defined(METALLIC_MAT) || defined(SKIN_MAT) || defined(SHELL_FUR_MAT) || defined(FUR_CONTOUR_MAT)
 TEXTURE2D(_MetallicGlossMap);   SAMPLER(sampler_MetallicGlossMap);
 #endif
 
@@ -81,6 +81,11 @@ TEXTURE2D(_FaceSDF);            SAMPLER(sampler_FaceSDF);
 TEXTURE2D(_HairMaskMap);        SAMPLER(sampler_HairMaskMap);
 TEXTURE2D(_HairUVMap);          SAMPLER(sampler_HairUVMap);
 TEXTURE2D(_HairNoiseMap);       SAMPLER(sampler_HairNoiseMap);
+#endif
+
+#if defined(SHELL_FUR_MAT)
+int _ShellIndex;
+TEXTURE2D(_FurNoiseMap);        SAMPLER(sampler_FurNoiseMap);
 #endif
 
 #if defined(_THREADMAP_ON)
@@ -126,7 +131,7 @@ half _HairNoiseStrength;
 half _BangsAlpha;
 #endif
 
-#if defined(SILK_MAT)
+#if defined(SILK_MAT) || defined(SHELL_FUR_MAT) || defined(FUR_CONTOUR_MAT)
 half4 _SpecularColor;
 half _Smoothness;
 half _Anisotropy;
@@ -135,6 +140,14 @@ half _Anisotropy;
 #if defined(COTTON_MAT)
 half4 _SpecularColor;
 half _Smoothness;
+#endif
+
+#if defined(SHELL_FUR_MAT)
+int _ShellCount;        // 该材质的Shell层数
+float _ShellDistance;   // 相邻Shell层之间的距离
+half _FurDensity;       // 噪声图采样密度，控制毛发疏密
+half4 _FurUVOffset;
+half _FurOcclusionPower;
 #endif
 
 //#if defined(_THREADMAP_ON)

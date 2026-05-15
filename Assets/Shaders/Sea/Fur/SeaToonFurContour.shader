@@ -1,4 +1,4 @@
-Shader "SeaToon/SeaToonShellFur"
+﻿Shader "SeaToon/SeaToonFurContour"
 {
     Properties
     {
@@ -8,26 +8,14 @@ Shader "SeaToon/SeaToonShellFur"
         
         [Header(Ramp)]
         _RampColor("Ramp Color", Color) = (0.6117647, 0.6117647, 0.6274511, 1)
-
+        
         [Header(Alpha Clipping)]
-        [Toggle(_ALPHATEST_ON)] _ALPHATEST_ON("Enable", Float) = 0
+        [Toggle(_ALPHATEST_ON)] _ALPHATEST_ON("Enable", Float) = 1
         _Cutoff("Cutoff", Range(0.0, 1.0)) = 0.5
-
+        
         [Header(Normal)]
         _BumpScale("Bump Scale", Float) = 1.0
         _BumpMap("Normal Map", 2D) = "bump" {}
-        
-        [Header(Shell)]
-        // 每个材质独立的层数和间距参数
-        _ShellCount("Shell Count", Integer) = 16
-        _ShellDistance("Shell Distance", Float) = 0.005
-
-        [Header(Fur)]
-        // 毛发高度图：白色=有毛发(高度满)，黑色=无毛发
-        _FurNoiseMap("Fur Noise Map", 2D) = "white" {}
-        _FurUVOffset("Fur Noise UV Offset", Vector) = (1, 0, 0, 0)
-        _FurDensity("Fur Density", Range(1.0, 100.0)) = 30.0
-        _FurOcclusionPower("Fur Occlusion Power", Range(0.0, 5.0)) = 1.5
         
         [Header(PBR)]
         _SpecularColor("Specular Color", Color) = (1, 1, 1)
@@ -42,11 +30,11 @@ Shader "SeaToon/SeaToonShellFur"
         [Header(Emission)]
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0)
         _EmissionMap("Emission Map", 2D) = "white" {}
-
+        
         [Header(Occlusion)]
         _OcclusionStrength("Occlusion Strength", Range(0.0, 1.0)) = 1.0
         _OcclusionMap("Occlusion Map", 2D) = "white" {}
-
+        
         [Header(Rim Light)]
         _RimLightWidth("Rim Light Width", Range(0.0, 1.0)) = 0.2
         _RimLightIntensity("Rim Light Intensity", Range(0.0, 10.0)) = 5.0
@@ -58,38 +46,37 @@ Shader "SeaToon/SeaToonShellFur"
             "RenderPipeline" = "UniversalPipeline"
             "RenderType" = "Opaque"
             "IgnoreProjector" = "True"
+            "UniversalMaterialType" = "ComplexLit"
             "Queue" = "Geometry"
         }
         LOD 100
 
         HLSLINCLUDE
-
+        
+        #pragma shader_feature_local _THREADMAP_ON
         #pragma shader_feature_local_fragment _ALPHATEST_ON
-        #define SHELL_FUR_MAT
+        #define FUR_CONTOUR_MAT
 
         ENDHLSL
-
-        // Shell Fur主Pass：由ShellFurPass逐层迭代绘制
-        // LightMode = "ShellFur" 对应Pass中的ShaderTagId
+        
         Pass
         {
-            Name "ShellFur"
+            Name "ForwardLit"
             Tags
             {
-                "LightMode" = "ShellFur"
+                "LightMode" = "UniversalForwardOnly"
             }
-
-            // 半透明混合，因为外层Shell的毛发间有空隙需要透过下层
-            Blend SrcAlpha OneMinusSrcAlpha
+            
+            Blend One Zero
             ZWrite On
-            Cull Back
+            Cull Off
             ZTest LEqual
-
+            
             HLSLPROGRAM
 
             #pragma vertex LitForwardVertex
             #pragma fragment LitForwardFragment
-            
+
             #pragma shader_feature_local _NORMALMAP
             
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
@@ -116,12 +103,12 @@ Shader "SeaToon/SeaToonShellFur"
 
             #pragma multi_compile_instancing
             #pragma instancing_options renderinglayer
-
+            
             #include "../SeaToonLitForwardPass.hlsl"
-
+            
             ENDHLSL
         }
-
+        
         Pass
         {
             Name "ShadowCaster"
@@ -159,7 +146,7 @@ Shader "SeaToon/SeaToonShellFur"
             {
                 "LightMode" = "DepthOnly"
             }
-
+            
             ZWrite On
             ZTest LEqual
             ColorMask R
@@ -175,7 +162,7 @@ Shader "SeaToon/SeaToonShellFur"
             #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
-
+            
             ENDHLSL
         }
 
@@ -186,29 +173,33 @@ Shader "SeaToon/SeaToonShellFur"
             {
                 "LightMode" = "DepthNormals"
             }
-
+            
             ZWrite On
             ZTest LEqual
             ColorMask RGBA
             Cull Off
-
+            
             HLSLPROGRAM
 
             #pragma vertex DepthNormalVertex
             #pragma fragment DepthNormalsFragment
 
             #pragma shader_feature_local _NORMALMAP
+            
+            //#pragma multi_compile_fragment _ _GBUFFER_NORMALS_OCT
 
             #pragma multi_compile_fragment _ LOD_FADE_CROSSFADE
 
             #pragma multi_compile_instancing
 
             #include "../SeaToonLitDepthNormalsPass.hlsl"
-
+            
             ENDHLSL
         }
 
     }
 
     FallBack "Hidden/Universal Render Pipeline/FallbackError"
+    CustomEditor "SeaToonLitShader"
+    
 }
