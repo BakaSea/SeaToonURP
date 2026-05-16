@@ -13,12 +13,14 @@
 #include "Skin/SeaToonSkin.hlsl"
 #elif defined(HAIR_MAT)
 #include "Hair/SeaToonHair.hlsl"
-#elif defined(SILK_MAT) || defined(FUR_CONTOUR_MAT)
+#elif defined(SILK_MAT)
 #include "Fabric/SeaToonSilk.hlsl"
 #elif defined(COTTON_MAT)
 #include "Fabric/SeaToonCotton.hlsl"
 #elif defined(SHELL_FUR_MAT)
 #include "Fur/SeaToonShellFur.hlsl"
+#elif defined(FUR_CONTOUR_MAT)
+#include "Fur/SeaToonFurContour.hlsl"
 #endif
 
 struct ShadowLightResult
@@ -107,18 +109,7 @@ half3 ShadeAdditionalLight(ToonInputData inputData, ToonSurfaceData surfaceData,
 
 half3 ShadeGI(ToonInputData inputData, ToonSurfaceData surfaceData, AmbientOcclusionFactor aoFactor, half shadowMask)
 {
-    half3 Li = 0.0;
-    
-    half3 reflectVector = reflect(-inputData.viewDirWS, inputData.normalWS);
-    half NoV = saturate(dot(inputData.normalWS, inputData.viewDirWS));
-    half fresnelTerm = Pow4(1.0 - NoV);
-    
-    Li += surfaceData.albedo*inputData.bakedGI;
-// #if defined(METALLIC_MAT)
-//     half3 indirectSpecular = GlossyEnvironmentReflection(reflectVector, inputData.positionWS, brdfData.perceptualRoughness, 1.0h, inputData.normalizedScreenSpaceUV);
-//     Li += indirectSpecular*EnvironmentBRDFSpecular(brdfData, fresnelTerm)*shadowMask;
-// #endif
-    
+    half3 Li = ShadeBSDFGI(inputData, surfaceData, shadowMask);
     return Li*aoFactor.indirectAmbientOcclusion;
 }
 

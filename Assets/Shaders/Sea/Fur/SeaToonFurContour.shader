@@ -9,10 +9,6 @@
         [Header(Ramp)]
         _RampColor("Ramp Color", Color) = (0.6117647, 0.6117647, 0.6274511, 1)
         
-        [Header(Alpha Clipping)]
-        [Toggle(_ALPHATEST_ON)] _ALPHATEST_ON("Enable", Float) = 1
-        _Cutoff("Cutoff", Range(0.0, 1.0)) = 0.5
-        
         [Header(Normal)]
         _BumpScale("Bump Scale", Float) = 1.0
         _BumpMap("Normal Map", 2D) = "bump" {}
@@ -44,17 +40,16 @@
         Tags
         {
             "RenderPipeline" = "UniversalPipeline"
-            "RenderType" = "Opaque"
+            "RenderType" = "Transparent"
             "IgnoreProjector" = "True"
             "UniversalMaterialType" = "ComplexLit"
-            "Queue" = "Geometry"
+            "Queue" = "Transparent"
         }
         LOD 100
 
         HLSLINCLUDE
         
         #pragma shader_feature_local _THREADMAP_ON
-        #pragma shader_feature_local_fragment _ALPHATEST_ON
         #define FUR_CONTOUR_MAT
 
         ENDHLSL
@@ -67,7 +62,7 @@
                 "LightMode" = "UniversalForwardOnly"
             }
             
-            Blend One Zero
+            Blend SrcAlpha OneMinusSrcAlpha
             ZWrite On
             Cull Off
             ZTest LEqual

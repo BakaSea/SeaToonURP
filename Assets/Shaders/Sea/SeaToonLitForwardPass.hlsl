@@ -171,7 +171,7 @@ ToonSurfaceData InitializeSurfaceData(Varyings input)
     output.smoothness = _Smoothness;
     output.anisotropy = _Anisotropy;
 #endif
-
+    
 #if defined(COTTON_MAT)
     output.specularColor = _SpecularColor.rgb;
     output.smoothness = _Smoothness;
@@ -211,11 +211,6 @@ ToonInputData InitializeInputData(Varyings input, half3 normalTS)
     
     output.fogCoord = InitializeInputDataFog(float4(input.positionWS, 1.0), input.fogFactor);
 
-#if defined(DYNAMICLIGHTMAP_ON)
-    output.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.dynamicLightmapUV, input.vertexSH, output.normalWS);
-#else
-    output.bakedGI = SAMPLE_GI(input.staticLightmapUV, input.vertexSH, output.normalWS);
-#endif
     output.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
     output.shadowMask = SAMPLE_SHADOWMASK(input.staticLightmapUV);
     
@@ -263,23 +258,13 @@ half4 LitForwardFragment(Varyings input) : SV_TARGET
     
     ToonSurfaceData surfaceData = InitializeSurfaceData(input);
     ToonInputData inputData = InitializeInputData(input, surfaceData.normalTS);
-
-#if defined(FUR_CONTOUR_MAT)
-    half VoL = dot(inputData.viewDirWS, inputData.normalWS);
-    if (VoL >= -0.1)
-        discard;
-#endif
-
+    
 #if defined(SHELL_FUR_MAT)
     surfaceData.occlusion = pow(saturate(layer), _FurOcclusionPower);
 #endif
     
     half4 color = ToonShading(inputData, surfaceData);
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
-
-#if defined(SHELL_FUR_MAT)
-    color.a = (_ShellIndex == 0) ? 1.0 : smoothstep(threshold, threshold + 0.05, furHeight);
-#endif
     
     return color;
 }

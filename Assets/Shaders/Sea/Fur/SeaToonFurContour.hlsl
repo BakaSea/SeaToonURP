@@ -1,5 +1,5 @@
-﻿#ifndef SEA_TOON_SHELL_FUR_INCLUDED
-#define SEA_TOON_SHELL_FUR_INCLUDED
+﻿#ifndef SEA_TOON_FUR_CONTOUR_INCLUDED
+#define SEA_TOON_FUR_CONTOUR_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -57,14 +57,17 @@ half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half sha
 
     half3 LiSH0 = SampleGISH0();
     half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask);
-    Li += brdfDiffuse*LiSH0;
+    //Li += brdfDiffuse*LiSH0;
     
     return Li;
 }
 
 half GetBSDFAlpha(ToonInputData inputData, ToonSurfaceData surfaceData)
 {
-    return 1.0;
+    half VdotL = dot(inputData.viewDirWS, inputData.normalWS);
+    half oneMinusVdotL = 1.0 - VdotL;
+    half sameSide = oneMinusVdotL*oneMinusVdotL;
+    return sameSide*surfaceData.albedo;
 }
 
 #endif

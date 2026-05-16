@@ -50,7 +50,6 @@ struct ToonInputData
     half3 viewDirWS;
     float4 shadowCoord;
     half fogCoord;
-    half3 bakedGI;
     float2 normalizedScreenSpaceUV;
     half4 shadowMask;
     float2 rimUV;

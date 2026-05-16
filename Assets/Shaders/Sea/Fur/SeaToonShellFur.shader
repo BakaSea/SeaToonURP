@@ -69,8 +69,6 @@ Shader "SeaToon/SeaToonShellFur"
 
         ENDHLSL
 
-        // Shell Fur主Pass：由ShellFurPass逐层迭代绘制
-        // LightMode = "ShellFur" 对应Pass中的ShaderTagId
         Pass
         {
             Name "ShellFur"
@@ -79,8 +77,7 @@ Shader "SeaToon/SeaToonShellFur"
                 "LightMode" = "ShellFur"
             }
 
-            // 半透明混合，因为外层Shell的毛发间有空隙需要透过下层
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend One Zero
             ZWrite On
             Cull Back
             ZTest LEqual

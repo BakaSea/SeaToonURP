@@ -40,6 +40,19 @@ half3 ShadeBSDF(ToonInputData inputData, ToonSurfaceData surfaceData, half shado
     return Li;
 }
 
+half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half shadowMask)
+{
+    half3 Li = 0.0;
+    
+    half3 albedo = surfaceData.albedo;
+
+    half3 LiSH0 = SampleGISH0();
+    half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask);
+    Li += brdfDiffuse*LiSH0;
+    
+    return Li;
+}
+
 half GetBSDFAlpha(ToonInputData inputData, ToonSurfaceData surfaceData)
 {
     return 1.0;

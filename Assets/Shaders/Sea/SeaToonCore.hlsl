@@ -25,4 +25,9 @@ half3 ToonDiffuse(half3 albedo, half3 rampColor, half shadowMask)
     return 0.5*albedo*ramp;
 }
 
+half3 SampleGISH0()
+{
+    return half3(unity_SHAr.w, unity_SHAg.w, unity_SHAb.w);
+}
+
 #endif
