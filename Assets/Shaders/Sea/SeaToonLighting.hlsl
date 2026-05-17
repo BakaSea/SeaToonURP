@@ -57,7 +57,6 @@ half CalculateFaceShadow(half4 faceSDF, half4 flipFaceSDF, half3 F, half3 U, hal
     L = normalize(L-U*dot(U, L));
     half lightSDF = -dot(L, F)*0.5+0.5;
     half4 sdf = lerp(faceSDF, flipFaceSDF, sign(dot(L, R))*0.5+0.5);
-    //half sdfShadow = smoothstep(SHADOW_MIN_THRESHOLD, SHADOW_MAX_THRESHOLD, sdf.b-lightSDF)*smoothstep(SHADOW_MIN_THRESHOLD, SHADOW_MAX_THRESHOLD, sdf.r-lightSDF);
     half avgSDF = (sdf.r+sdf.b+sdf.a)/3.0;
     half sdfShadow = smoothstep(SHADOW_MIN_THRESHOLD, SHADOW_MAX_THRESHOLD, avgSDF-lightSDF);
     half bangsShadow = 1.0-SAMPLE_TEXTURE2D(_BangsShadowTexture, sampler_BangsShadowTexture, bangsShadowCoord).r;

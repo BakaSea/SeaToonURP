@@ -253,7 +253,8 @@ half4 LitForwardFragment(Varyings input) : SV_TARGET
     // 第0层（根部）保留完整表面作为底色
     half threshold = layer * layer;
     if (_ShellIndex > 0 && furHeight < threshold)
-        discard;
+    //if (furHeight > threshold)
+		discard;
 #endif
     
     ToonSurfaceData surfaceData = InitializeSurfaceData(input);

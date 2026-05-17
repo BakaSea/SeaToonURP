@@ -25,7 +25,7 @@ half3 ShadeBSDF(ToonInputData inputData, ToonSurfaceData surfaceData, half shado
     ConvertAnisotropyToClampRoughness(perceptualRoughness, anisotropy, roughnessT, roughnessB);
     
     // Diffuse
-    half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask*surfaceData.occlusion);
+    half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask);
     Li += brdfDiffuse*light.color*light.distanceAttenuation;
 
     // Specular
