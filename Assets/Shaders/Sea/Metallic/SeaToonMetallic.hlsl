@@ -49,17 +49,30 @@ half3 ShadeBSDF(ToonInputData inputData, ToonSurfaceData surfaceData, half shado
 half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half shadowMask)
 {
     half3 Li = 0.0;
-    
+
     half3 albedo = surfaceData.albedo;
 
     half3 LiSH0 = SampleGISH0();
     half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask);
     Li += brdfDiffuse*LiSH0;
 
-    // half3 LiSH0 = SampleSH(inputData.normalWS);
-    // half3 brdfDiffuse = surfaceData.albedo;
-    // Li += brdfDiffuse*LiSH0;
-    
+#if !defined(FACE_MAT)
+    // Specular GI
+    half3 N = inputData.normalWS;
+    half3 V = inputData.viewDirWS;
+    half3 R = reflect(-V, N);
+    half smoothness = surfaceData.smoothness;
+    half perceptualRoughness = PerceptualSmoothnessToPerceptualRoughness(smoothness);
+    half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
+    half roughness2 = roughness*roughness;
+    half surfaceReduction = 1.0/(roughness2+1.0);
+    half clampedNdotV = ClampNdotV(dot(N, V));
+    half fresnelTerm = Pow4(1.0-clampedNdotV);
+    half grazingTerm = saturate(smoothness+max(max(albedo.r, albedo.g), albedo.b));
+    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0);
+    Li += surfaceReduction*indirectSpecular*lerp(albedo, grazingTerm, fresnelTerm);
+#endif
+
     return Li;
 }
 

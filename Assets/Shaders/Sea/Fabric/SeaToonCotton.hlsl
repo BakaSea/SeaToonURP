@@ -43,13 +43,23 @@ half3 ShadeBSDF(ToonInputData inputData, ToonSurfaceData surfaceData, half shado
 half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half shadowMask)
 {
     half3 Li = 0.0;
-    
+
     half3 albedo = surfaceData.albedo;
 
     half3 LiSH0 = SampleGISH0();
     half3 brdfDiffuse = ToonDiffuse(albedo, surfaceData.rampColor, shadowMask);
     Li += brdfDiffuse*LiSH0;
-    
+
+    // Specular GI (cloth sheen)
+    half3 N = inputData.normalWS;
+    half3 V = inputData.viewDirWS;
+    half3 R = reflect(-V, N);
+    half3 specularColor = surfaceData.specularColor*albedo;
+    half perceptualRoughness = PerceptualSmoothnessToPerceptualRoughness(surfaceData.smoothness);
+    half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
+    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0);
+    Li += indirectSpecular*specularColor*roughness;
+
     return Li;
 }
 
