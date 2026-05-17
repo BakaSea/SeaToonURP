@@ -57,7 +57,7 @@ half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half sha
     half3 specularColor = surfaceData.specularColor*albedo;
     half perceptualRoughness = PerceptualSmoothnessToPerceptualRoughness(surfaceData.smoothness);
     half roughness = PerceptualRoughnessToRoughness(perceptualRoughness);
-    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0);
+    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0, inputData.normalizedScreenSpaceUV);
     Li += indirectSpecular*specularColor*roughness;
 
     return Li;
