@@ -37,6 +37,9 @@ Shader "SeaToon/SeaToonLit"
         [Header(Rim Light)]
         _RimLightWidth("Rim Light Width", Range(0.0, 1.0)) = 0.2
         _RimLightIntensity("Rim Light Intensity", Range(0.0, 10.0)) = 5.0
+
+        [Header(Cull)]
+        [Enum(Off, 0, Front, 1)] _Cull("Cull Mode", Float) = 0
     }
     SubShader
     {
@@ -66,9 +69,9 @@ Shader "SeaToon/SeaToonLit"
             
             Blend One Zero
             ZWrite On
-            Cull Back
+            Cull [_Cull]
             ZTest LEqual
-            
+
             HLSLPROGRAM
 
             #pragma vertex LitForwardVertex
