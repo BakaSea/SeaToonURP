@@ -39,7 +39,7 @@ Shader "SeaToon/SeaToonLit"
         _RimLightIntensity("Rim Light Intensity", Range(0.0, 10.0)) = 5.0
 
         [Header(Cull)]
-        [Enum(Off, 0, Front, 1)] _Cull("Cull Mode", Float) = 0
+        [Enum(Off, 0, Front, 1, Back, 2)] _Cull("Cull Mode", Float) = 2
     }
     SubShader
     {
