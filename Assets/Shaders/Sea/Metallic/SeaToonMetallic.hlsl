@@ -69,7 +69,7 @@ half3 ShadeBSDFGI(ToonInputData inputData, ToonSurfaceData surfaceData, half sha
     half clampedNdotV = ClampNdotV(dot(N, V));
     half fresnelTerm = Pow4(1.0-clampedNdotV);
     half grazingTerm = saturate(smoothness+max(max(albedo.r, albedo.g), albedo.b));
-    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0);
+    half3 indirectSpecular = GlossyEnvironmentReflection(R, inputData.positionWS, perceptualRoughness, 1.0, inputData.normalizedScreenSpaceUV);
     Li += surfaceReduction*indirectSpecular*lerp(albedo, grazingTerm, fresnelTerm);
 #endif
 
